@@ -1,7 +1,7 @@
 
 # visit http://127.0.0.1:8050/ in your web browser.
 
-import dash
+from dash import Dash, dcc, html, Input, Output
 
 import plotly.express as px
 import plotly.graph_objects as go 
@@ -75,37 +75,57 @@ fig_3d.update_layout(scene = dict(
                         height=600)
 
 
-# TODO: There should be a slider for slices
 
-####### Heatmap Set-up ######
-fig_heatmap0 = px.imshow(subvolume[0,:,:])
-fig_heatmap1 = px.imshow(subvolume[:,0,:])
-fig_heatmap2 = px.imshow(subvolume[:,:,0])
+#########################
 
 
-app= dash.Dash(__name__)
+app= Dash(__name__)
 
-app.layout = dash.html.Div(children=[
-    dash.html.H2(
+app.layout = html.Div(children=[
+    html.H2(
         children=f'{dataset}',
         style={
             'textAlign': 'center'
             }
     ),
-    dash.html.Div(
-        dash.dcc.Graph(figure=fig_heatmap0)
-    ),
-    dash.html.Div(
-        dash.dcc.Graph(figure=fig_heatmap1)
-    ),
-    dash.html.Div(
-        dash.dcc.Graph(figure=fig_heatmap2)
-    ),
-    dash.html.Div(
-        dash.dcc.Graph(figure=fig_3d)
+    html.Div(children=[
+        html.H4('x-slice', style={'textAlign': 'center'}),
+        dcc.Graph(id='x-slice'),
+        dcc.Slider(
+            min=0,
+            max=(np.shape(subvolume)[0])-1,
+            step=1,
+            value=0,
+            id='x-slice-slider'
+            )
+    ]),
+    html.Div(children=[
+        html.H4('y-slice', style={'textAlign': 'center'}),
+        dcc.Graph(id='y-slice'),
+        dcc.Slider(
+            min=0,
+            max=(np.shape(subvolume)[1])-1,
+            step=1,
+            value=0,
+            id='y-slice-slider'
+            )
+    ]),
+    html.Div(children=[
+        html.H4('z-slice', style={'textAlign': 'center'}),
+        dcc.Graph(id='z-slice'),
+        dcc.Slider(
+            min=0,
+            max=(np.shape(subvolume)[2])-1,
+            step=1,
+            value=0,
+            id='z-slice-slider'
+            )
+    ]),
+    html.Div(
+        dcc.Graph(figure=fig_3d)
     ),
 
-#    dash.html.Div(
+#    html.Div(
 #        dbc.Row([
 #        dbc.Col(
 #            dash.html.Div(dash.dcc.Graph(figure=fig_heatmap0)), width={'size':3}
@@ -118,6 +138,41 @@ app.layout = dash.html.Div(children=[
 #            )
 #        ])
 ])
+
+##################################################
+####### Callback functions for 2D slices #########
+##################################################
+
+# TODO: other options: color scheme, min/max
+
+@app.callback(
+    Output(component_id='x-slice', component_property='figure'),
+    Input(component_id='x-slice-slider', component_property='value')
+)
+def update_x_slice(input_value):
+    return px.imshow(subvolume[input_value,:,:], 
+                    zmin=np.percentile(subvolume, 8), 
+                    zmax=np.percentile(subvolume, 92))
+
+
+@app.callback(
+    Output(component_id='y-slice', component_property='figure'),
+    Input(component_id='y-slice-slider', component_property='value')
+)
+def update_y_slice(input_value):
+    return px.imshow(subvolume[:,input_value,:], 
+                    zmin=np.percentile(subvolume, 8), 
+                    zmax=np.percentile(subvolume, 92))
+
+
+@app.callback(
+    Output(component_id='z-slice', component_property='figure'),
+    Input(component_id='z-slice-slider', component_property='value')
+)
+def update_x_slice(input_value):
+    return px.imshow(subvolume[:,:,input_value], 
+                    zmin=np.percentile(subvolume, 8), 
+                    zmax=np.percentile(subvolume, 92))
 
 
 if __name__ == '__main__':
