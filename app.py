@@ -95,6 +95,7 @@ app.layout = html.Div(children=[
             min=0,
             max=(np.shape(subvolume)[0])-1,
             step=1,
+            marks={i: f'{i}' for i in range(np.shape(subvolume)[0]) if i%5==0},
             value=0,
             id='x-slice-slider'
             )
@@ -106,6 +107,7 @@ app.layout = html.Div(children=[
             min=0,
             max=(np.shape(subvolume)[1])-1,
             step=1,
+            marks={i: f'{i}' for i in range(np.shape(subvolume)[1]) if i%5==0},
             value=0,
             id='y-slice-slider'
             )
@@ -117,6 +119,7 @@ app.layout = html.Div(children=[
             min=0,
             max=(np.shape(subvolume)[2])-1,
             step=1,
+            marks={i: f'{i}' for i in range(np.shape(subvolume)[2]) if i%5==0},
             value=0,
             id='z-slice-slider'
             )
