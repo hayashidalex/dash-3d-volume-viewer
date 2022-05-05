@@ -1,7 +1,8 @@
 
 # visit http://127.0.0.1:8050/ in your web browser.
 
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output, State
 
 import plotly.express as px
 import plotly.graph_objects as go 
@@ -14,21 +15,25 @@ import numpy as np
 import miscellaneous_functions as misc
 
 
+#############
+# To make data_path as a callback, 
+# see app_test.py for getting to numpy
+# Then that has to be saved as dcc.Store
+# See https://dash.plotly.com/sharing-data-between-callbacks
+##############
+
+
+
 data_path='data/36_54_54/'
-
-
-##########
-
 subvolume = misc.stack_to_numpy(data_path)
 vol_fig = misc.plotly_volume_rendering(subvolume)
 
 
-###########
+#############################################
 
 
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# TODO: Make these actually work
 controls_2d = dbc.Card(
     [
         html.Div(
@@ -58,11 +63,56 @@ controls_2d = dbc.Card(
     body=True,
 )
 
+'''
+controls_3d = dbc.Card(
+    [
+        html.Div(
+            [
+                dbc.Label("Colormap"),
+                dcc.Dropdown(
+                    id="colormap",
+                    options=['rainbow', 'viridis', 'gray'],
+                    value='rainbow',
+                ),
+            ]
+        ),
+        html.Div(
+            [
+                dbc.Label("Max percentage"),
+                dbc.Input(id="max_percent", type="number", value=92, min=1, max=100),
+                
+            ]
+        ),
+        html.Div(
+            [
+                dbc.Label("Min percentage"),
+                dbc.Input(id="min_percent", type="number", value=8, min=1, max=100),
+            ]
+        ),
+    ],
+    body=True,
+)
+'''
+
+
+
 
 app.layout = dbc.Container(
     [
-        html.H2(f'{data_path}'),
+        html.H1(f'3D Volume Visualizer: {data_path}'),
         html.Hr(),
+        #html.Br(),
+        #html.Div(
+        #    [
+        #        dbc.Label("Input Dataset"),
+        #        dbc.Input(id="dataset", type="text", required=True, 
+        #            placeholder="path/to/dir/containing/tif/files"),
+        #        html.Button(id='submit-button-state', n_clicks=0, children='Submit'),
+
+        #    ]
+        #),
+        #html.Br(),
+        html.Br(),
         dbc.Row(
         [
         dbc.Col(
@@ -78,7 +128,7 @@ app.layout = dbc.Container(
                         value=0,
                         id='x-slice-slider'
                         ),
-                     html.Hr(),
+                    html.Hr(),
                     dcc.Graph(id='y-slice'),
                     dcc.Slider(
                         min=0,
@@ -88,7 +138,7 @@ app.layout = dbc.Container(
                         value=0,
                         id='y-slice-slider'
                         ),
-                     html.Hr(),
+                    html.Hr(),
                     dcc.Graph(id='z-slice'),
                     dcc.Slider(
                         min=0,
@@ -109,17 +159,42 @@ app.layout = dbc.Container(
         html.Br(),
         html.Br(),
         dbc.Row(
-            dcc.Graph(figure=vol_fig),
+            dcc.Graph(id='plotly_vol'),
         )
     ]
 )
 
+################## 
+### Callback for Dataset selection
+##################
+#
+#@app.callback(
+#    Output(component_id='data_array', component_property='value'),
+#    Input('submit-button-state', 'n_clicks'),
+#    State(component_id='dataset-state', component_property='value'),
+#)
+#def get_array(data_path):
+#    return misc.stack_to_numpy(n_clicks, data_path)
+#
 
+##### 2D sliders
+#
+#@app.callback(
+#    Output(component_id='x_slider', component_property='children'),
+#    Input(component_id='data_array', component_property='value'),
+#)
+#def set_x_slider(data_array):
+#    return dcc.Slider(
+#           min=0,
+#           max=(np.shape(data_array)[0])-1,
+#           step=1,
+#           marks={i: f'{i}' for i in range(np.shape(data_array)[0]) if i%5==0},
+#           value=0,
+#           )
+#
+#
 
-
-##################################################
 ####### Callback functions for 2D slices #########
-##################################################
 
 
 @app.callback(
@@ -165,6 +240,15 @@ def update_z_slice(input_value, colormap, max_percent, min_percent):
                     zmax=np.percentile(subvolume, max_percent),
                     color_continuous_scale=colormap)
 
+
+##############
+#@app.callback(
+#    Output(component_id='plotly_vol', component_property='figure'),
+#    Input(component_id='data_array', component_property='value') 
+#)
+#def update_plotly_3D(subvolume):
+#    return misc.plotly_volume_rendering(subvolume) 
+#
 
 
 if __name__ == '__main__':
