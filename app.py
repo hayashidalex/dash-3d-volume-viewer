@@ -29,29 +29,29 @@ vol_fig = misc.plotly_volume_rendering(subvolume)
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # TODO: Make these actually work
-controls = dbc.Card(
+controls_2d = dbc.Card(
     [
         html.Div(
             [
-                dbc.Label("X variable"),
+                dbc.Label("Colormap"),
                 dcc.Dropdown(
-                    id="color scheme",
-                    options=['rainbow', 'viridis'],
+                    id="colormap",
+                    options=['rainbow', 'viridis', 'gray'],
                     value='rainbow',
                 ),
             ]
         ),
         html.Div(
             [
-                dbc.Label("max percentage"),
-                dbc.Input(id="max-percent", type="number", value=92),
+                dbc.Label("Max percentage"),
+                dbc.Input(id="max_percent", type="number", value=92, min=1, max=100),
                 
             ]
         ),
         html.Div(
             [
-                dbc.Label("min percentage"),
-                dbc.Input(id="min-percent", type="number", value=8),
+                dbc.Label("Min percentage"),
+                dbc.Input(id="min_percent", type="number", value=8, min=1, max=100),
             ]
         ),
     ],
@@ -102,18 +102,15 @@ app.layout = dbc.Container(
                     ],
                     align="center",
                 ),
-                md=6
+                md=7
         ),
-        dbc.Col(
-            [
-                controls, 
-                html.Br(),
-                html.Br(),
-                dcc.Graph(figure=vol_fig),
-            ],
-            md=6),
-        ]
-        ),
+        dbc.Col(controls_2d, md=5),
+        ]),
+        html.Br(),
+        html.Br(),
+        dbc.Row(
+            dcc.Graph(figure=vol_fig),
+        )
     ]
 )
 
@@ -127,33 +124,46 @@ app.layout = dbc.Container(
 
 @app.callback(
     Output(component_id='x-slice', component_property='figure'),
-    Input(component_id='x-slice-slider', component_property='value')
+    Input(component_id='x-slice-slider', component_property='value'),
+    Input(component_id='colormap', component_property='value'),
+    Input(component_id='max_percent', component_property='value'),
+    Input(component_id='min_percent', component_property='value'),
 )
-def update_x_slice(input_value):
+def update_x_slice(input_value, colormap, max_percent, min_percent):
     return px.imshow(subvolume[input_value,:,:], 
-                    zmin=np.percentile(subvolume, 8), 
-                    zmax=np.percentile(subvolume, 92),
-                    color_continuous_scale='viridis')
+                    zmin=np.percentile(subvolume, min_percent), 
+                    zmax=np.percentile(subvolume, max_percent),
+                    color_continuous_scale=colormap)
+
 
 
 @app.callback(
     Output(component_id='y-slice', component_property='figure'),
-    Input(component_id='y-slice-slider', component_property='value')
+    Input(component_id='y-slice-slider', component_property='value'),
+    Input(component_id='colormap', component_property='value'),
+    Input(component_id='max_percent', component_property='value'),
+    Input(component_id='min_percent', component_property='value'),
 )
-def update_y_slice(input_value):
+def update_y_slice(input_value, colormap, max_percent, min_percent):
     return px.imshow(subvolume[:,input_value,:], 
-                    zmin=np.percentile(subvolume, 8), 
-                    zmax=np.percentile(subvolume, 92))
+                    zmin=np.percentile(subvolume, min_percent), 
+                    zmax=np.percentile(subvolume, max_percent),
+                    color_continuous_scale=colormap)
+
 
 
 @app.callback(
     Output(component_id='z-slice', component_property='figure'),
-    Input(component_id='z-slice-slider', component_property='value')
+    Input(component_id='z-slice-slider', component_property='value'),
+    Input(component_id='colormap', component_property='value'),
+    Input(component_id='max_percent', component_property='value'),
+    Input(component_id='min_percent', component_property='value'),
 )
-def update_x_slice(input_value):
+def update_z_slice(input_value, colormap, max_percent, min_percent):
     return px.imshow(subvolume[:,:,input_value], 
-                    zmin=np.percentile(subvolume, 8), 
-                    zmax=np.percentile(subvolume, 92))
+                    zmin=np.percentile(subvolume, min_percent), 
+                    zmax=np.percentile(subvolume, max_percent),
+                    color_continuous_scale=colormap)
 
 
 
