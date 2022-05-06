@@ -17,24 +17,30 @@ def stack_to_numpy(stack_path, output_file=None):
     '''
 
     dataset = Path(stack_path)
-    files = list(dataset.glob('*.tif'))
-    files.sort(key=lambda f: int(re.sub(r'[^0-9]*', "", str(f))))
-    
-    vol_array = []
-    for f in files:
-      vol_array.append(np.array(Image.open(f), dtype=np.float32))
-    
-    # convert to numpy
-    vol_array = np.array(vol_array)
-    
-    # sanity check
-    print("numpy array shape: ", np.shape(vol_array))
 
-    if output_file:
-        with open(output_file, 'wb') as f:
-            np.save(f, vol_array)
+    if not dataset.is_dir():
+        print("Error: volume directory not found.")
+        return np.zeros((1,1,1))
+
+    else:
+        files = list(dataset.glob('*.tif'))
+        files.sort(key=lambda f: int(re.sub(r'[^0-9]*', "", str(f))))
+        vol_array = [] 
+
+        for f in files:
+          vol_array.append(np.array(Image.open(f), dtype=np.float32))
         
-    return vol_array
+        # convert to numpy
+        vol_array = np.array(vol_array)
+        
+        # sanity check
+        print("numpy array shape: ", np.shape(vol_array))
+
+        if output_file:
+            with open(output_file, 'wb') as f:
+                np.save(f, vol_array)
+            
+        return vol_array
 
 
 
