@@ -11,22 +11,17 @@ from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 
 import numpy as np
+import json
+from json import JSONEncoder
 
 import miscellaneous_functions as misc
 
 
-#############
-# To make data_path as a callback, 
-# see app_test.py for getting to numpy
-# Then that has to be saved as dcc.Store
-# See https://dash.plotly.com/sharing-data-between-callbacks
-##############
-
-
-
-data_path='data/36_54_54/'
-subvolume = misc.stack_to_numpy(data_path)
-vol_fig = misc.plotly_volume_rendering(subvolume)
+class NumpyArrayEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return JSONEncoder.default(self, obj)
 
 
 #############################################
@@ -61,7 +56,7 @@ controls_2d = dbc.Card(
     body=True,
 )
 
-
+################
 
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -79,6 +74,7 @@ app.layout = dbc.Container(
                 html.Div(id='dataset-selection')
             ]
         ),
+        dcc.Store(id='intermediate-value'),
         html.Br(),
         html.Br(),
         dbc.Row(
@@ -88,35 +84,14 @@ app.layout = dbc.Container(
                 dbc.Row(
                     [
                     dcc.Graph(id='x-slice'),
-                    dcc.Slider(
-                        min=0,
-                        max=(np.shape(subvolume)[0])-1,
-                        step=1,
-                        marks={i: f'{i}' for i in range(np.shape(subvolume)[0]) if i%5==0},
-                        value=0,
-                        id='x-slice-slider'
-                        ),
+                    html.Div(id='x_slider_display'),
                     html.Hr(),
                     dcc.Graph(id='y-slice'),
-                    dcc.Slider(
-                        min=0,
-                        max=(np.shape(subvolume)[1])-1,
-                        step=1,
-                        marks={i: f'{i}' for i in range(np.shape(subvolume)[1]) if i%5==0},
-                        value=0,
-                        id='y-slice-slider'
-                        ),
+                    html.Div(id='y_slider_display'),
                     html.Hr(),
                     dcc.Graph(id='z-slice'),
-                    dcc.Slider(
-                        min=0,
-                        max=(np.shape(subvolume)[2])-1,
-                        step=1,
-                        marks={i: f'{i}' for i in range(np.shape(subvolume)[2]) if i%5==0},
-                        value=0,
-                        id='z-slice-slider'
-                        ),
-                     html.Hr(),
+                    html.Div(id='z_slider_display'),
+                    html.Hr(),
                     ],
                     align="center",
                 ),
@@ -132,12 +107,10 @@ app.layout = dbc.Container(
     ]
 )
 
-################## 
-### Callback for Dataset selection
-##################
+### Callbacks for Dataset selection
 
 @app.callback(
-    Output(component_id='dataset-selection', component_property='children'),
+    Output(component_id='intermediate-value', component_property='data'),
     Input('submit-button-state', 'n_clicks'),
     State(component_id='dataset', component_property='value'),
     prevent_initial_call=True
@@ -146,82 +119,159 @@ def get_array(n_clicks, data_path):
     if n_clicks is None:
         raise PreventUpdate
     else:
-        subvolume = misc.stack_to_numpy(data_path)
-        return f'subvolume: {np.shape(subvolume)}'
+        volume = misc.stack_to_numpy(data_path)
+        encodedNumpyData = json.dumps({"volume": volume}, cls=NumpyArrayEncoder)
+
+        return encodedNumpyData
+
+@app.callback(
+    Output(component_id='dataset-selection', component_property='children'),
+    Input(component_id='intermediate-value', component_property='data'),    
+    prevent_initial_call=True
+)
+def print_volume_size(jsonified_volume):
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
+    
+    return f"volume shape: {np.shape(data_array)}"
 
 
-##### 2D sliders
-#
-#@app.callback(
-#    Output(component_id='x_slider', component_property='children'),
-#    Input(component_id='data_array', component_property='value'),
-#)
-#def set_x_slider(data_array):
-#    return dcc.Slider(
-#           min=0,
-#           max=(np.shape(data_array)[0])-1,
-#           step=1,
-#           marks={i: f'{i}' for i in range(np.shape(data_array)[0]) if i%5==0},
-#           value=0,
-#           )
-#
-#
 
-####### Callback functions for 2D slices #########
+### Callbacks for 2D sliders
+
+@app.callback(
+    Output(component_id='x_slider_display', component_property='children'),
+    Input(component_id='intermediate-value', component_property='data'),    
+    prevent_initial_call=True
+)
+def set_x_slider(jsonified_volume):
+    
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
+
+    return dcc.Slider(
+           min=0,
+           max=(np.shape(data_array)[0])-1,
+           step=1,
+           marks={i: f'{i}' for i in range(np.shape(data_array)[0]) if i%5==0},
+           value=0,
+           id='x_slider'
+           )
+
+@app.callback(
+    Output(component_id='y_slider_display', component_property='children'),
+    Input(component_id='intermediate-value', component_property='data'),    
+    prevent_initial_call=True
+)
+def set_y_slider(jsonified_volume):
+    
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
+
+    return dcc.Slider(
+           min=0,
+           max=(np.shape(data_array)[1])-1,
+           step=1,
+           marks={i: f'{i}' for i in range(np.shape(data_array)[1]) if i%5==0},
+           value=0,
+           id='y_slider'
+           )
+
+@app.callback(
+    Output(component_id='z_slider_display', component_property='children'),
+    Input(component_id='intermediate-value', component_property='data'),    
+    prevent_initial_call=True
+)
+def set_x_slider(jsonified_volume):
+    
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
+
+    return dcc.Slider(
+           min=0,
+           max=(np.shape(data_array)[2])-1,
+           step=1,
+           marks={i: f'{i}' for i in range(np.shape(data_array)[2]) if i%5==0},
+           value=0,
+           id='z_slider'
+           )
+
+
+#### Callbacks for 2D slices
 
 
 @app.callback(
     Output(component_id='x-slice', component_property='figure'),
-    Input(component_id='x-slice-slider', component_property='value'),
+    Input(component_id='intermediate-value', component_property='data'),
+    Input(component_id='x_slider', component_property='value'),
     Input(component_id='colormap', component_property='value'),
     Input(component_id='max_percent', component_property='value'),
     Input(component_id='min_percent', component_property='value'),
+    prevent_initial_call=True
+    
 )
-def update_x_slice(input_value, colormap, max_percent, min_percent):
-    return px.imshow(subvolume[input_value,:,:], 
-                    zmin=np.percentile(subvolume, min_percent), 
-                    zmax=np.percentile(subvolume, max_percent),
+def update_x_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
+
+    return px.imshow(data_array[slice_n,:,:], 
+                    zmin=np.percentile(data_array, min_percent), 
+                    zmax=np.percentile(data_array, max_percent),
                     color_continuous_scale=colormap)
-
-
 
 @app.callback(
     Output(component_id='y-slice', component_property='figure'),
-    Input(component_id='y-slice-slider', component_property='value'),
+    Input(component_id='intermediate-value', component_property='data'),
+    Input(component_id='y_slider', component_property='value'),
     Input(component_id='colormap', component_property='value'),
     Input(component_id='max_percent', component_property='value'),
     Input(component_id='min_percent', component_property='value'),
+    prevent_initial_call=True
 )
-def update_y_slice(input_value, colormap, max_percent, min_percent):
-    return px.imshow(subvolume[:,input_value,:], 
-                    zmin=np.percentile(subvolume, min_percent), 
-                    zmax=np.percentile(subvolume, max_percent),
-                    color_continuous_scale=colormap)
+def update_y_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
 
+    return px.imshow(data_array[:,slice_n,:], 
+                    zmin=np.percentile(data_array, min_percent), 
+                    zmax=np.percentile(data_array, max_percent),
+                    color_continuous_scale=colormap)
 
 
 @app.callback(
     Output(component_id='z-slice', component_property='figure'),
-    Input(component_id='z-slice-slider', component_property='value'),
+    Input(component_id='intermediate-value', component_property='data'),
+    Input(component_id='z_slider', component_property='value'),
     Input(component_id='colormap', component_property='value'),
     Input(component_id='max_percent', component_property='value'),
     Input(component_id='min_percent', component_property='value'),
+    prevent_initial_call=True
 )
-def update_z_slice(input_value, colormap, max_percent, min_percent):
-    return px.imshow(subvolume[:,:,input_value], 
-                    zmin=np.percentile(subvolume, min_percent), 
-                    zmax=np.percentile(subvolume, max_percent),
+def update_z_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
+
+    return px.imshow(data_array[:,:,slice_n], 
+                    zmin=np.percentile(data_array, min_percent), 
+                    zmax=np.percentile(data_array, max_percent),
                     color_continuous_scale=colormap)
 
 
-##############
-#@app.callback(
-#    Output(component_id='plotly_vol', component_property='figure'),
-#    Input(component_id='data_array', component_property='value') 
-#)
-#def update_plotly_3D(subvolume):
-#    return misc.plotly_volume_rendering(subvolume) 
-#
+### Callback for 3D Plotly volume rendering
+
+@app.callback(
+    Output(component_id='plotly_vol', component_property='figure'),
+    Input(component_id='intermediate-value', component_property='data'),
+    prevent_initial_call=True
+)
+def update_plotly_3D(jsonified_volume):
+    decodedArray = json.loads(jsonified_volume)
+    data_array = np.asarray(decodedArray["volume"])
+
+    return misc.plotly_volume_rendering(data_array) 
+
+
+########### End of Callbacks #############
 
 
 if __name__ == '__main__':
