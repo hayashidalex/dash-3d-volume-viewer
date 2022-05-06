@@ -6,11 +6,12 @@ from PIL import Image
 import re
 
 
-def stack_to_numpy(stack_path):
+def stack_to_numpy(stack_path, output_file=None):
     '''
     Convert subvol stack TIF to numpy
     Args:
         stack_path(str): path/to/directory/containing/numbered/tif/files
+        (optional) output_file(str): path/to/output/file(.npy)
     Returns:
         numpy 3D array
     '''
@@ -19,15 +20,22 @@ def stack_to_numpy(stack_path):
     files = list(dataset.glob('*.tif'))
     files.sort(key=lambda f: int(re.sub(r'[^0-9]*', "", str(f))))
     
-    subvolume = []
+    vol_array = []
     for f in files:
-      subvolume.append(np.array(Image.open(f), dtype=np.float32))
+      vol_array.append(np.array(Image.open(f), dtype=np.float32))
     
     # convert to numpy
-    subvolume = np.array(subvolume)
-    print("numpy array shape: ", np.shape(subvolume))
+    vol_array = np.array(vol_array)
+    
+    # sanity check
+    print("numpy array shape: ", np.shape(vol_array))
 
-    return subvolume
+    if output_file:
+        with open(output_file, 'wb') as f:
+            np.save(f, vol_array)
+        
+    return vol_array
+
 
 
 def plotly_volume_rendering(vol_array, name='3D volume', voxel_size_um = 1.0,
