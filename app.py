@@ -32,8 +32,6 @@ vol_fig = misc.plotly_volume_rendering(subvolume)
 #############################################
 
 
-app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
-
 controls_2d = dbc.Card(
     [
         html.Div(
@@ -63,55 +61,25 @@ controls_2d = dbc.Card(
     body=True,
 )
 
-'''
-controls_3d = dbc.Card(
-    [
-        html.Div(
-            [
-                dbc.Label("Colormap"),
-                dcc.Dropdown(
-                    id="colormap",
-                    options=['rainbow', 'viridis', 'gray'],
-                    value='rainbow',
-                ),
-            ]
-        ),
-        html.Div(
-            [
-                dbc.Label("Max percentage"),
-                dbc.Input(id="max_percent", type="number", value=92, min=1, max=100),
-                
-            ]
-        ),
-        html.Div(
-            [
-                dbc.Label("Min percentage"),
-                dbc.Input(id="min_percent", type="number", value=8, min=1, max=100),
-            ]
-        ),
-    ],
-    body=True,
-)
-'''
 
 
-
+app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = dbc.Container(
     [
-        html.H1(f'3D Volume Visualizer: {data_path}'),
+        html.H1(f'3D Volume Visualizer'),
         html.Hr(),
-        #html.Br(),
-        #html.Div(
-        #    [
-        #        dbc.Label("Input Dataset"),
-        #        dbc.Input(id="dataset", type="text", required=True, 
-        #            placeholder="path/to/dir/containing/tif/files"),
-        #        html.Button(id='submit-button-state', n_clicks=0, children='Submit'),
-
-        #    ]
-        #),
-        #html.Br(),
+        html.Br(),
+        html.Div(
+            [
+                dbc.Label("Input Dataset"),
+                dbc.Input(id="dataset", type="text", required=True, 
+                    placeholder="path/to/dir/containing/tif/files"),
+                html.Button(id='submit-button-state', n_clicks=0, children='Submit'),
+                html.Div(id='dataset-selection')
+            ]
+        ),
+        html.Br(),
         html.Br(),
         dbc.Row(
         [
@@ -167,15 +135,20 @@ app.layout = dbc.Container(
 ################## 
 ### Callback for Dataset selection
 ##################
-#
-#@app.callback(
-#    Output(component_id='data_array', component_property='value'),
-#    Input('submit-button-state', 'n_clicks'),
-#    State(component_id='dataset-state', component_property='value'),
-#)
-#def get_array(data_path):
-#    return misc.stack_to_numpy(n_clicks, data_path)
-#
+
+@app.callback(
+    Output(component_id='dataset-selection', component_property='children'),
+    Input('submit-button-state', 'n_clicks'),
+    State(component_id='dataset', component_property='value'),
+    prevent_initial_call=True
+    )
+def get_array(n_clicks, data_path):
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
+        subvolume = misc.stack_to_numpy(data_path)
+        return f'subvolume: {np.shape(subvolume)}'
+
 
 ##### 2D sliders
 #
