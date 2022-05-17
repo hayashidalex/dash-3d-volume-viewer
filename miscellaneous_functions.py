@@ -6,12 +6,12 @@ from PIL import Image
 import re
 
 
-def stack_to_numpy(stack_path, output_file=None):
+def stack_to_numpy(stack_path, binary_file=None):
     '''
     Convert subvol stack TIF to numpy
     Args:
         stack_path(str): path/to/directory/containing/numbered/tif/files
-        (optional) output_file(str): path/to/output/file(.npy)
+        (optional) binary_file(str): path/to/output/file(.npy)
     Returns:
         numpy 3D array
     '''
@@ -36,12 +36,34 @@ def stack_to_numpy(stack_path, output_file=None):
         # sanity check
         print("numpy array shape: ", np.shape(vol_array))
 
-        if output_file:
-            with open(output_file, 'wb') as f:
+        if binary_file:
+            with open(binary_file, 'wb') as f:
                 np.save(f, vol_array)
             
         return vol_array
 
+
+
+def numpy_binary_to_array(npy_file):
+    '''
+    Load .npy file
+    Args:
+        npy_file(str): path/to/npy/file
+    Returns:
+        numpy array
+    '''
+
+    datafile = Path(npy_file)
+    
+    if not datafile.suffix == '.npy':
+        print("Error: numpy binary file not found.")
+        return np.zeros((1,1,1))
+
+    else:
+        with open(npy_file, 'rb') as f:
+            array = np.load(f)
+
+    return array
 
 
 def plotly_volume_rendering(vol_array, name='3D volume', voxel_size_um = 1.0,
