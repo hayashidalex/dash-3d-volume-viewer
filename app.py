@@ -5,14 +5,13 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
 
 import plotly.express as px
-import plotly.graph_objects as go 
-import plotly.express as px
 from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 
 import numpy as np
 import json
 from json import JSONEncoder
+from pathlib import Path
 
 import miscellaneous_functions as misc
 
@@ -54,15 +53,60 @@ controls_2d = dbc.Card(
         ),
     ],
     body=True,
+    style={'margin': 10} 
 )
 
 ################
+controls_3d = dbc.Card(
+    [
+        html.Div(
+            [
+                dbc.Label("Colormap"),
+                dcc.Dropdown(
+                    id="colormap_3d",
+                    options=['rainbow', 'viridis', 'gray'],
+                    value='rainbow',
+                ),
+            ]
+        ),
+        html.Div(
+            [
+                dbc.Label("Max percentage"),
+                dbc.Input(id="max_percent_3d", type="number", value=92, min=1, max=100),
+                
+            ]
+        ),
+        html.Div(
+            [
+                dbc.Label("Min percentage"),
+                dbc.Input(id="min_percent_3d", type="number", value=8, min=1, max=100),
+            ]
+        ),
+        html.Div(
+             dbc.Button(id='3d-request', style={'margin': 10}, n_clicks=0, children='3D Volume rendering')
+        )
+        
+    ],
+    body=True,
+    style={'margin': 10}
+)
+
+download_buttons = dbc.Card(
+    [
+        dbc.Button(id='download-all', style={'margin': 10}, n_clicks=0, children='Download All'),
+        dbc.Button(id='download-2d', style={'margin': 10}, n_clicks=0, children='Download 2D'),
+    ],
+    body=True,
+)
+
+########################
 
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app.config.suppress_callback_exceptions = True
 
 app.layout = dbc.Container(
     [
-        html.H1(f'3D Volume Visualizer'),
+        html.H1(f'3D Volume Visualizer', style={'margin': 10}),
         html.Hr(),
         html.Br(),
         html.Div(
@@ -70,9 +114,9 @@ app.layout = dbc.Container(
                 dbc.Label("Input Dataset"),
                 dbc.Input(id="dataset", type="text", required=True, 
                     placeholder="path/to/dir/containing/tif/files"),
-                html.Button(id='submit-button-state', n_clicks=0, children='Submit'),
+                dbc.Button(id='submit-button-state', style={'margin': 10}, n_clicks=0, children='Submit'),
                 html.Div(id='dataset-selection')
-            ]
+            ], 
         ),
         dcc.Store(id='intermediate-value'),
         html.Br(),
@@ -97,13 +141,27 @@ app.layout = dbc.Container(
                 ),
                 md=7
         ),
-        dbc.Col(controls_2d, md=5),
+        dbc.Col([
+            dbc.Row(controls_2d), 
+            dbc.Row(download_buttons)
+            ],
+            md=5
+        ),
         ]),
         html.Br(),
         html.Br(),
-        dbc.Row(
-            dcc.Graph(id='plotly_vol'),
-        )
+        #html.Div(
+        #    [
+        #        dbc.Button(id='3d-request', style={'margin': 10}, n_clicks=0, children='3D Volume rendering'),
+        #    ]
+        #),
+        dbc.Row([
+            dbc.Col(
+                dcc.Graph(id='plotly_vol'),
+                md=7
+            ),
+            dbc.Col(controls_3d, md=5),
+        ])
     ]
 )
 
@@ -119,11 +177,22 @@ def get_array(n_clicks, data_path):
     if n_clicks is None:
         raise PreventUpdate
     else:
-        volume = misc.stack_to_numpy(data_path)
-        encodedNumpyData = json.dumps({"volume": volume}, cls=NumpyArrayEncoder)
 
+        if Path(data_path).suffix == ".npy":
+            volume = misc.numpy_binary_to_array(data_path)
+
+        elif Path(data_path).is_dir:
+            volume = misc.stack_to_numpy(data_path)
+        
+        else:
+            print("Incorrect input")
+            volume = np.zeros((1,1,1))
+        
+        encodedNumpyData = json.dumps({"volume": volume}, cls=NumpyArrayEncoder)
         return encodedNumpyData
 
+
+## Print the size of the selected volume array
 @app.callback(
     Output(component_id='dataset-selection', component_property='children'),
     Input(component_id='intermediate-value', component_property='data'),    
@@ -182,7 +251,7 @@ def set_y_slider(jsonified_volume):
     Input(component_id='intermediate-value', component_property='data'),    
     prevent_initial_call=True
 )
-def set_x_slider(jsonified_volume):
+def set_z_slider(jsonified_volume):
     
     decodedArray = json.loads(jsonified_volume)
     data_array = np.asarray(decodedArray["volume"])
@@ -207,7 +276,7 @@ def set_x_slider(jsonified_volume):
     Input(component_id='colormap', component_property='value'),
     Input(component_id='max_percent', component_property='value'),
     Input(component_id='min_percent', component_property='value'),
-    prevent_initial_call=True
+    prevent_initial_call=True, 
     
 )
 def update_x_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
@@ -226,7 +295,7 @@ def update_x_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     Input(component_id='colormap', component_property='value'),
     Input(component_id='max_percent', component_property='value'),
     Input(component_id='min_percent', component_property='value'),
-    prevent_initial_call=True
+    prevent_initial_call=True, 
 )
 def update_y_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
     decodedArray = json.loads(jsonified_volume)
@@ -245,7 +314,7 @@ def update_y_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     Input(component_id='colormap', component_property='value'),
     Input(component_id='max_percent', component_property='value'),
     Input(component_id='min_percent', component_property='value'),
-    prevent_initial_call=True
+    prevent_initial_call=True, 
 )
 def update_z_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
     decodedArray = json.loads(jsonified_volume)
@@ -261,14 +330,18 @@ def update_z_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
 
 @app.callback(
     Output(component_id='plotly_vol', component_property='figure'),
-    Input(component_id='intermediate-value', component_property='data'),
+    Input(component_id='3d-request', component_property='n_clicks'),
+    State(component_id='intermediate-value', component_property='data'),
     prevent_initial_call=True
 )
-def update_plotly_3D(jsonified_volume):
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+def update_plotly_3D(n_clicks, jsonified_volume):
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
+        decodedArray = json.loads(jsonified_volume)
+        data_array = np.asarray(decodedArray["volume"])
 
-    return misc.plotly_volume_rendering(data_array) 
+        return misc.plotly_volume_rendering(data_array) 
 
 
 ########### End of Callbacks #############
