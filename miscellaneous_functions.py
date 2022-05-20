@@ -83,9 +83,9 @@ def plotly_volume_rendering(vol_array, name='3D volume', voxel_size_um = 1.0,
     Returns:
         plotly figure
     '''
+    
+    # TODO: Add min and max values
 
-    ###### 3D Plotly Figure #######
- 
     X, Y, Z = np.mgrid[0:vol_array.shape[0], 0:vol_array.shape[1], 0:vol_array.shape[2]]
     vol = go.Volume(
           name=name,

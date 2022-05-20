@@ -61,9 +61,9 @@ controls_3d = dbc.Card(
     [
         html.Div(
             [
-                dbc.Label("Colormap"),
+                dbc.Label("Colorscale"),
                 dcc.Dropdown(
-                    id="colormap_3d",
+                    id="colorscale_3d",
                     options=['rainbow', 'viridis', 'gray'],
                     value='rainbow',
                 ),
@@ -71,15 +71,15 @@ controls_3d = dbc.Card(
         ),
         html.Div(
             [
-                dbc.Label("Max percentage"),
-                dbc.Input(id="max_percent_3d", type="number", value=92, min=1, max=100),
+                dbc.Label("opacity"),
+                dbc.Input(id="opacity", type="number", value=0.3, min=0.1, max=0.9, step=0.1),
                 
             ]
         ),
         html.Div(
             [
-                dbc.Label("Min percentage"),
-                dbc.Input(id="min_percent_3d", type="number", value=8, min=1, max=100),
+                dbc.Label("Surface Count"),
+                dbc.Input(id="surface-count", type="number", value=12, min=3, max=30),
             ]
         ),
         html.Div(
@@ -97,6 +97,7 @@ download_buttons = dbc.Card(
         dbc.Button(id='download-2d', style={'margin': 10}, n_clicks=0, children='Download 2D'),
     ],
     body=True,
+    style={'margin': 10}
 )
 
 ########################
@@ -332,16 +333,24 @@ def update_z_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     Output(component_id='plotly_vol', component_property='figure'),
     Input(component_id='3d-request', component_property='n_clicks'),
     State(component_id='intermediate-value', component_property='data'),
+    Input(component_id='colorscale_3d', component_property='value'),
+    Input(component_id='opacity', component_property='value'),
+    Input(component_id='surface-count', component_property='value'),
+    
     prevent_initial_call=True
 )
-def update_plotly_3D(n_clicks, jsonified_volume):
+def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity, surface_n):
     if n_clicks is None:
         raise PreventUpdate
     else:
         decodedArray = json.loads(jsonified_volume)
         data_array = np.asarray(decodedArray["volume"])
 
-        return misc.plotly_volume_rendering(data_array) 
+        return misc.plotly_volume_rendering(data_array,
+                                            colorscale=colorscale,
+                                            opacity=opacity,
+                                            opacityscale=opacity,
+                                            surface_count=surface_n) 
 
 
 ########### End of Callbacks #############
