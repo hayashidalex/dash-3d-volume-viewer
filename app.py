@@ -93,8 +93,10 @@ controls_3d = dbc.Card(
 
 download_buttons = dbc.Card(
     [
-        dbc.Button(id='download-all', style={'margin': 10}, n_clicks=0, children='Download All'),
-        dbc.Button(id='download-2d', style={'margin': 10}, n_clicks=0, children='Download 2D'),
+        dbc.Button(id='btn-download-all', style={'margin': 10}, n_clicks=0, children='Download All'),
+        dcc.Download(id='download-all'),
+        dbc.Button(id='btn-download-2d', style={'margin': 10}, n_clicks=0, children='Download 2D'),
+        dcc.Download(id='download-2d')
     ],
     body=True,
     style={'margin': 10}
@@ -351,6 +353,30 @@ def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity, surface_n)
                                             opacity=opacity,
                                             opacityscale=opacity,
                                             surface_count=surface_n) 
+
+
+### Callbacks for Image downloading 
+
+# TODO: Figure out the real images (will probably have to be s
+@app.callback(
+    Output("download-all", "data"),
+    Input("btn-download-all", "n_clicks"),
+    prevent_initial_call=True,
+)
+def download_all(n_clicks):
+    return dcc.send_file(
+        "./data/Globus_figure_3.png"
+    )
+
+@app.callback(
+    Output("download-2d", "data"),
+    Input("btn-download-2d", "n_clicks"),
+    prevent_initial_call=True,
+)
+def download_all(n_clicks):
+    return dcc.send_file(
+        "./data/Globus_figure_3.png"
+    )
 
 
 ########### End of Callbacks #############
