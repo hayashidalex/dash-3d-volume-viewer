@@ -15,6 +15,9 @@ from pathlib import Path
 
 import miscellaneous_functions as misc
 
+from PIL import Image
+import io
+
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -335,9 +338,9 @@ def update_z_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     Output(component_id='plotly_vol', component_property='figure'),
     Input(component_id='3d-request', component_property='n_clicks'),
     State(component_id='intermediate-value', component_property='data'),
-    Input(component_id='colorscale_3d', component_property='value'),
-    Input(component_id='opacity', component_property='value'),
-    Input(component_id='surface-count', component_property='value'),
+    State(component_id='colorscale_3d', component_property='value'),
+    State(component_id='opacity', component_property='value'),
+    State(component_id='surface-count', component_property='value'),
     
     prevent_initial_call=True
 )
@@ -357,6 +360,10 @@ def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity, surface_n)
 
 ### Callbacks for Image downloading 
 
+
+
+
+
 # TODO: Figure out the real images (will probably have to be s
 @app.callback(
     Output("download-all", "data"),
@@ -364,9 +371,13 @@ def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity, surface_n)
     prevent_initial_call=True,
 )
 def download_all(n_clicks):
-    return dcc.send_file(
-        "./data/Globus_figure_3.png"
-    )
+    img = Image.open("./data/Globus_figure_3.png", mode='r')
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    img_byte_arr = img_byte_arr.getvalue()
+    
+    return dcc.send_bytes(img_byte_arr, "test.png")
+
 
 @app.callback(
     Output("download-2d", "data"),
