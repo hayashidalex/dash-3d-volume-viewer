@@ -14,6 +14,7 @@ from json import JSONEncoder
 from pathlib import Path
 
 import miscellaneous_functions as misc
+import dash_graphing_functions  as dash_graph
 
 from PIL import Image
 import io
@@ -82,7 +83,7 @@ controls_3d = dbc.Card(
         html.Div(
             [
                 dbc.Label("Surface Count"),
-                dbc.Input(id="surface-count", type="number", value=12, min=3, max=30),
+                dbc.Input(id="surface-count", type="number", value=4, min=3, max=30),
             ]
         ),
         html.Div(
@@ -99,7 +100,9 @@ download_buttons = dbc.Card(
         dbc.Button(id='btn-download-all', style={'margin': 10}, n_clicks=0, children='Download All'),
         dcc.Download(id='download-all'),
         dbc.Button(id='btn-download-2d', style={'margin': 10}, n_clicks=0, children='Download 2D'),
-        dcc.Download(id='download-2d')
+        dcc.Download(id='download-2d'),
+        dbc.Button(id='btn-download-3d', style={'margin': 10}, n_clicks=0, children='Download 3D'),
+        dcc.Download(id='download-3d')
     ],
     body=True,
     style={'margin': 10}
@@ -156,11 +159,6 @@ app.layout = dbc.Container(
         ]),
         html.Br(),
         html.Br(),
-        #html.Div(
-        #    [
-        #        dbc.Button(id='3d-request', style={'margin': 10}, n_clicks=0, children='3D Volume rendering'),
-        #    ]
-        #),
         dbc.Row([
             dbc.Col(
                 dcc.Graph(id='plotly_vol'),
@@ -289,6 +287,7 @@ def update_x_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     decodedArray = json.loads(jsonified_volume)
     data_array = np.asarray(decodedArray["volume"])
 
+    
     return px.imshow(data_array[slice_n,:,:], 
                     zmin=np.percentile(data_array, min_percent), 
                     zmax=np.percentile(data_array, max_percent),
@@ -341,53 +340,119 @@ def update_z_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     State(component_id='colorscale_3d', component_property='value'),
     State(component_id='opacity', component_property='value'),
     State(component_id='surface-count', component_property='value'),
-    
+    State(component_id='max_percent', component_property='value'),
+    State(component_id='min_percent', component_property='value'),
     prevent_initial_call=True
 )
-def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity, surface_n):
+def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity, 
+                    surface_n, max_pct, min_pct):
     if n_clicks is None:
         raise PreventUpdate
     else:
         decodedArray = json.loads(jsonified_volume)
         data_array = np.asarray(decodedArray["volume"])
 
-        return misc.plotly_volume_rendering(data_array,
+        return dash_graph.render_plotly_volume_view(data_array,
                                             colorscale=colorscale,
                                             opacity=opacity,
                                             opacityscale=opacity,
-                                            surface_count=surface_n) 
+                                            surface_count=surface_n,
+                                            max_pct=max_pct,
+                                            min_pct=min_pct) 
 
 
 ### Callbacks for Image downloading 
-
-
-
-
 
 # TODO: Figure out the real images (will probably have to be s
 @app.callback(
     Output("download-all", "data"),
     Input("btn-download-all", "n_clicks"),
+    State(component_id='intermediate-value', component_property='data'),
+    State(component_id='colormap', component_property='value'),
+    State(component_id='max_percent', component_property='value'),
+    State(component_id='min_percent', component_property='value'),
+    State(component_id='colorscale_3d', component_property='value'),
+    State(component_id='opacity', component_property='value'),
+    State(component_id='surface-count', component_property='value'),
     prevent_initial_call=True,
 )
-def download_all(n_clicks):
-    img = Image.open("./data/Globus_figure_3.png", mode='r')
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format='PNG')
-    img_byte_arr = img_byte_arr.getvalue()
-    
-    return dcc.send_bytes(img_byte_arr, "test.png")
+def download_all(n_clicks, jsonified_volume, colormap_2D, max_pct, min_pct, 
+                colorscale_3D, opacity, surface_n):
+    #img = Image.open("./data/Globus_figure_3.png", mode='r')
+    #img_byte_arr = io.BytesIO()
+    #img.save(img_byte_arr, format='PNG')
+    #img_byte_arr = img_byte_arr.getvalue()
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
+        decodedArray = json.loads(jsonified_volume)
+        data_array = np.asarray(decodedArray["volume"])
+
+        byte_array_all = dash_graph.generate_summary(data_array,
+                                            min_pct=min_pct,
+                                            max_pct = max_pct,
+                                            colormap_2D = colormap_2D,
+                                            colorscale_3D=colorscale_3D,
+                                            opacity=opacity,
+                                            opacityscale=opacity,
+                                            surface_count=surface_n) 
+        byte_array_all = byte_array_all.getvalue()
+
+        return dcc.send_bytes(byte_array_all, "all_render.png")
+
 
 
 @app.callback(
     Output("download-2d", "data"),
     Input("btn-download-2d", "n_clicks"),
+    State(component_id='intermediate-value', component_property='data'),
+    State(component_id='colormap', component_property='value'),
+    State(component_id='max_percent', component_property='value'),
+    State(component_id='min_percent', component_property='value'),
     prevent_initial_call=True,
 )
-def download_all(n_clicks):
-    return dcc.send_file(
-        "./data/Globus_figure_3.png"
-    )
+def download_2d(n_clicks, jsonified_volume, colormap_2D, max_pct, min_pct):
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
+        decodedArray = json.loads(jsonified_volume)
+        data_array = np.asarray(decodedArray["volume"])
+
+        byte_array_2D = dash_graph.generate_2D_summary(data_array,
+                                            min_pct=min_pct,
+                                            max_pct = max_pct,
+                                            colormap = colormap_2D)
+        byte_array_2D = byte_array_2D.getvalue()
+
+        return dcc.send_bytes(byte_array_2D, "2D_render.png")
+
+
+@app.callback(
+    Output("download-3d", "data"),
+    Input("btn-download-3d", "n_clicks"),
+    State(component_id='intermediate-value', component_property='data'),
+    State(component_id='colorscale_3d', component_property='value'),
+    State(component_id='opacity', component_property='value'),
+    State(component_id='surface-count', component_property='value'),
+    prevent_initial_call=True,
+)
+def download_3d(n_clicks, jsonified_volume, colorscale, opacity, surface_n):
+
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
+        decodedArray = json.loads(jsonified_volume)
+        data_array = np.asarray(decodedArray["volume"])
+
+        byte_array_3D = dash_graph.render_plotly_volume_view(data_array,
+                                            output_bytes = True,
+                                            colorscale=colorscale,
+                                            opacity=opacity,
+                                            opacityscale=opacity,
+                                            surface_count=surface_n) 
+        byte_array_3D = byte_array_3D.getvalue()
+
+        return dcc.send_bytes(byte_array_3D, "3D_render.png")
 
 
 ########### End of Callbacks #############
