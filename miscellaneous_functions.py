@@ -4,12 +4,11 @@ from PIL import Image
 import re
 
 
-def stack_to_numpy(stack_path, binary_file=None):
+def stack_to_array(stack_path):
     '''
     Convert subvol stack TIF to numpy
     Args:
         stack_path(str): path/to/directory/containing/numbered/tif/files
-        (optional) binary_file(str): path/to/output/file(.npy)
     Returns:
         numpy 3D array
     '''
@@ -34,12 +33,24 @@ def stack_to_numpy(stack_path, binary_file=None):
         # sanity check
         print("numpy array shape: ", np.shape(vol_array))
 
-        if binary_file:
-            with open(binary_file, 'wb') as f:
-                np.save(f, vol_array)
             
         return vol_array
 
+
+def save_array_as_npy(n_array, outfile):
+    '''
+    Save numpy array as an .npy file at a specified path
+    Args:
+        n_array(numpy array)
+        outfile(str): paty/to/output/file(.npy)
+    Returns:
+        None
+    '''
+    if outfile[-4:] != '.npy'
+        print("outfile must have an .npy extension")
+
+    with open(outfile, 'wb') as f:
+        np.save(f, n_array)
 
 
 def numpy_binary_to_array(npy_file):
