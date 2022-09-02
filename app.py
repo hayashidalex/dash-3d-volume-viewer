@@ -186,7 +186,7 @@ def get_array(n_clicks, data_path):
             volume = misc.numpy_binary_to_array(data_path)
 
         elif Path(data_path).is_dir:
-            volume = misc.stack_to_numpy(data_path)
+            volume = misc.stack_to_array(data_path)
         
         else:
             print("Incorrect input")

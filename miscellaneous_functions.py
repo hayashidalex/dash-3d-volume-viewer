@@ -46,7 +46,7 @@ def save_array_as_npy(n_array, outfile):
     Returns:
         None
     '''
-    if outfile[-4:] != '.npy'
+    if outfile[-4:] != '.npy':
         print("outfile must have an .npy extension")
 
     with open(outfile, 'wb') as f:
