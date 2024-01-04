@@ -1,23 +1,16 @@
 
 # visit http://127.0.0.1:8050/ in your web browser.
-
-from dash import Dash, dcc, html
-from dash.dependencies import Input, Output, State
-
-import plotly.express as px
-from plotly.subplots import make_subplots
-import dash_bootstrap_components as dbc
-
-import numpy as np
 import json
 from json import JSONEncoder
+import numpy as np
 from pathlib import Path
-
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output, State
+import plotly.express as px
+import dash_bootstrap_components as dbc
 import miscellaneous_functions as misc
 import dash_graphing_functions  as dash_graph
 
-from PIL import Image
-import io
 
 
 class NumpyArrayEncoder(JSONEncoder):
@@ -115,7 +108,7 @@ app.config.suppress_callback_exceptions = True
 
 app.layout = dbc.Container(
     [
-        html.H1(f'3D Volume Visualizer', style={'margin': 10}),
+        html.H1('3D Volume Visualizer', style={'margin': 10}),
         html.Hr(),
         html.Br(),
         html.Div(
@@ -192,8 +185,8 @@ def get_array(n_clicks, data_path):
             print("Incorrect input")
             volume = np.zeros((1,1,1))
         
-        encodedNumpyData = json.dumps({"volume": volume}, cls=NumpyArrayEncoder)
-        return encodedNumpyData
+        encoded_array_data = json.dumps({"volume": volume}, cls=NumpyArrayEncoder)
+        return encoded_array_data
 
 
 ## Print the size of the selected volume array
@@ -203,8 +196,8 @@ def get_array(n_clicks, data_path):
     prevent_initial_call=True
 )
 def print_volume_size(jsonified_volume):
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+    decoded_array = json.loads(jsonified_volume)
+    data_array = np.asarray(decoded_array["volume"])
     
     return f"volume shape: {np.shape(data_array)}"
 
@@ -219,8 +212,8 @@ def print_volume_size(jsonified_volume):
 )
 def set_x_slider(jsonified_volume):
     
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+    decoded_array = json.loads(jsonified_volume)
+    data_array = np.asarray(decoded_array["volume"])
 
     return dcc.Slider(
            min=0,
@@ -238,8 +231,8 @@ def set_x_slider(jsonified_volume):
 )
 def set_y_slider(jsonified_volume):
     
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+    decoded_array = json.loads(jsonified_volume)
+    data_array = np.asarray(decoded_array["volume"])
 
     return dcc.Slider(
            min=0,
@@ -257,8 +250,8 @@ def set_y_slider(jsonified_volume):
 )
 def set_z_slider(jsonified_volume):
     
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+    decoded_array = json.loads(jsonified_volume)
+    data_array = np.asarray(decoded_array["volume"])
 
     return dcc.Slider(
            min=0,
@@ -284,8 +277,8 @@ def set_z_slider(jsonified_volume):
     
 )
 def update_x_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+    decoded_array = json.loads(jsonified_volume)
+    data_array = np.asarray(decoded_array["volume"])
 
     
     return px.imshow(data_array[slice_n,:,:], 
@@ -303,8 +296,8 @@ def update_x_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     prevent_initial_call=True, 
 )
 def update_y_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+    decoded_array = json.loads(jsonified_volume)
+    data_array = np.asarray(decoded_array["volume"])
 
     return px.imshow(data_array[:,slice_n,:], 
                     zmin=np.percentile(data_array, min_percent), 
@@ -322,8 +315,8 @@ def update_y_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent
     prevent_initial_call=True, 
 )
 def update_z_slice(jsonified_volume, slice_n, colormap, max_percent, min_percent):
-    decodedArray = json.loads(jsonified_volume)
-    data_array = np.asarray(decodedArray["volume"])
+    decoded_array = json.loads(jsonified_volume)
+    data_array = np.asarray(decoded_array["volume"])
 
     return px.imshow(data_array[:,:,slice_n], 
                     zmin=np.percentile(data_array, min_percent), 
@@ -349,8 +342,8 @@ def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity,
     if n_clicks is None:
         raise PreventUpdate
     else:
-        decodedArray = json.loads(jsonified_volume)
-        data_array = np.asarray(decodedArray["volume"])
+        decoded_array = json.loads(jsonified_volume)
+        data_array = np.asarray(decoded_array["volume"])
 
         return dash_graph.render_plotly_volume_view(data_array,
                                             colorscale=colorscale,
@@ -363,7 +356,6 @@ def update_plotly_3D(n_clicks, jsonified_volume, colorscale, opacity,
 
 ### Callbacks for Image downloading 
 
-# TODO: Figure out the real images (will probably have to be s
 @app.callback(
     Output("download-all", "data"),
     Input("btn-download-all", "n_clicks"),
@@ -385,8 +377,8 @@ def download_all(n_clicks, jsonified_volume, colormap_2D, max_pct, min_pct,
     if n_clicks is None:
         raise PreventUpdate
     else:
-        decodedArray = json.loads(jsonified_volume)
-        data_array = np.asarray(decodedArray["volume"])
+        decoded_array = json.loads(jsonified_volume)
+        data_array = np.asarray(decoded_array["volume"])
 
         byte_array_all = dash_graph.generate_summary(data_array,
                                             min_pct=min_pct,
@@ -415,8 +407,8 @@ def download_2d(n_clicks, jsonified_volume, colormap_2D, max_pct, min_pct):
     if n_clicks is None:
         raise PreventUpdate
     else:
-        decodedArray = json.loads(jsonified_volume)
-        data_array = np.asarray(decodedArray["volume"])
+        decoded_array = json.loads(jsonified_volume)
+        data_array = np.asarray(decoded_array["volume"])
 
         byte_array_2D = dash_graph.generate_2D_summary(data_array,
                                             min_pct=min_pct,
@@ -441,8 +433,8 @@ def download_3d(n_clicks, jsonified_volume, colorscale, opacity, surface_n):
     if n_clicks is None:
         raise PreventUpdate
     else:
-        decodedArray = json.loads(jsonified_volume)
-        data_array = np.asarray(decodedArray["volume"])
+        decoded_array = json.loads(jsonified_volume)
+        data_array = np.asarray(decoded_array["volume"])
 
         byte_array_3D = dash_graph.render_plotly_volume_view(data_array,
                                             output_bytes = True,

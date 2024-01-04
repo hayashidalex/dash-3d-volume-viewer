@@ -1,13 +1,12 @@
-import plotly.graph_objects as go 
-import plotly.express as px
-from plotly.subplots import make_subplots
-
-import numpy as np
-from pathlib import Path
-from PIL import Image
-import matplotlib.pyplot as plt
 import io
 import math
+#from pathlib import Path
+import plotly.graph_objects as go 
+#import plotly.express as px
+from plotly.subplots import make_subplots
+import numpy as np
+from PIL import Image
+#import matplotlib.pyplot as plt
 
 
 def render_plotly_volume_view(vol_array, 
@@ -62,8 +61,8 @@ def render_plotly_volume_view(vol_array,
     vals = []
     texts = []
     for i in range (0,max(vol_array.shape),8):
-      vals.append(i)
-      texts.append(str(i*voxel_size_um))
+        vals.append(i)
+        texts.append(str(i*voxel_size_um))
 
 
     if axis == 'x':                                                    
