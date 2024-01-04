@@ -41,3 +41,8 @@ Download buttons are for generating .png files of the displayed images.
 
 ## Tested Python Versions
 3.9, 3.10
+
+# (Additional file) Stand alone module 
+`subvolume_visualization.py`  can be used for generating renderings 
+non-interactively
+
