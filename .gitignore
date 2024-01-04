@@ -1,4 +1,6 @@
+__pycache__/
 old_files/
 sandbox/
-subvolume_visualization.py
 venv/
+data/
+output/
