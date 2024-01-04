@@ -8,7 +8,7 @@ dash-core-components==2.0.0
 dash-html-components==2.0.0
 dash-table==5.0.0
 dill==0.3.7
-Flask==2.1.1
+Flask==2.2.5
 Flask-Compress==1.11
 fonttools==4.33.3
 importlib-metadata==4.11.3
